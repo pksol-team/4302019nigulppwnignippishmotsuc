@@ -8,6 +8,15 @@ if($_SERVER['REQUEST_METHOD'] == "POST") {
 	SimpleEcommCartSetting::setValue('shipping_options_flat_rate_option2_international', $flat_rate_rate["option2_international"]);
 	SimpleEcommCartSetting::setValue('shipping_options_flat_rate_option3_local', $flat_rate_rate["option3_local"]);
 	SimpleEcommCartSetting::setValue('shipping_options_flat_rate_option3_international', $flat_rate_rate["option3_international"]); 
+
+
+	SimpleEcommCartSetting::setValue('shipping_options_flat_rate_option4_1quantity', $flat_rate_rate["option4_1quantity"]); 
+	SimpleEcommCartSetting::setValue('shipping_options_flat_rate_option4_2quantity', $flat_rate_rate["option4_2quantity"]); 
+	SimpleEcommCartSetting::setValue('shipping_options_flat_rate_option4_35quantity', $flat_rate_rate["option4_35quantity"]); 
+	SimpleEcommCartSetting::setValue('shipping_options_flat_rate_option4_628quantity', $flat_rate_rate["option4_628quantity"]); 
+	SimpleEcommCartSetting::setValue('shipping_options_flat_rate_option4_2960quantity', $flat_rate_rate["option4_2960quantity"]); 
+	SimpleEcommCartSetting::setValue('shipping_options_flat_rate_option4_61100quantity', $flat_rate_rate["option4_61100quantity"]); 
+
   } 
 } 
 ?> 
@@ -65,6 +74,60 @@ if($_SERVER['REQUEST_METHOD'] == "POST") {
 							</table>
 					</td>
 				</tr>
+
+				<tr>
+					<td>
+						<input type="radio" value="4" name="shipping_options_flat_rate[option]" <?php echo (SimpleEcommCartSetting::getValue("shipping_options_flat_rate_option")  == '4')? 'checked="true"' : '' ?>>Custom Flat Rates</input>
+						 <img title="1. Free (only one item): 0 cost. (Need to checkout through Paypal)
+
+2. quantity 1: item price + custom shipping cost (e.g., $2 + $2)
+
+3. quantity 2: item price x 2 + shipping cost (e.g., $2 x 2 + $4)
+
+4. quantity 3-5: item price x quantity + custom shipping cost (e.g., $2 x 4 + $5)
+
+5. quantity 6-28: item price x quantity + custom shipping cost (e.g., $2 x 12 + $10)
+
+6. quantity 29-60: item price x quantity + custom shipping cost (e.g., $2 x 60 + $20)
+
+7. quantity 61-100: item price x quantity + custom shipping cost (e.g., $2 x 72 + $40)." src=" <?php echo INFO_ICON ?>"/>
+						<br/>
+						<table>
+							<tr>
+								<td>Quantity: 1</td>
+								<td><input type="text" style="width: 75px;"  name="shipping_options_flat_rate[option4_1quantity]"  value='<?php echo SimpleEcommCartSetting::getValue("shipping_options_flat_rate_option4_1quantity") ?>'/></td>
+
+								<td>Quantity: 2</td>
+								<td><input type="text" style="width: 75px;"  name="shipping_options_flat_rate[option4_2quantity]"  value='<?php echo SimpleEcommCartSetting::getValue("shipping_options_flat_rate_option4_2quantity") ?>'/></td>
+
+
+							</tr>
+
+							<tr>
+								<td>Quantity: 3-5</td>
+								<td><input type="text" style="width: 75px;"  name="shipping_options_flat_rate[option4_35quantity]"  value='<?php echo SimpleEcommCartSetting::getValue("shipping_options_flat_rate_option4_35quantity") ?>'/></td>
+
+								<td>Quantity: 6-28</td>
+								<td><input type="text" style="width: 75px;"  name="shipping_options_flat_rate[option4_628quantity]"  value='<?php echo SimpleEcommCartSetting::getValue("shipping_options_flat_rate_option4_628quantity") ?>'/></td>
+
+
+							</tr>
+
+							<tr>
+								<td>Quantity: 29-60</td>
+								<td><input type="text" style="width: 75px;"  name="shipping_options_flat_rate[option4_2960quantity]"  value='<?php echo SimpleEcommCartSetting::getValue("shipping_options_flat_rate_option4_2960quantity") ?>'/></td>
+
+								<td>Quantity: 61-100</td>
+								<td><input type="text" style="width: 75px;"  name="shipping_options_flat_rate[option4_61100quantity]"  value='<?php echo SimpleEcommCartSetting::getValue("shipping_options_flat_rate_option4_61100quantity") ?>'/></td>
+
+
+							</tr>
+
+
+							</table>
+					</td>
+				</tr>
+
 			</table>
 			<br>
 		<input type='submit' name='submit' class="button-primary" style='width: 80px;' value='Save' />

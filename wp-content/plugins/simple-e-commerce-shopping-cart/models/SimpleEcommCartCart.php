@@ -604,7 +604,40 @@ class SimpleEcommCartCart {
 			} 
 		}
 		 
+	} else if(SimpleEcommCartSetting::getValue('shipping_options_flat_rate_option') == '4') {
+
+		foreach($this->_items as $item) 
+		{
+			$product = $item->getProduct(); 
+
+			if ($item->getQuantity() == 1) {
+				$flat_rate += SimpleEcommCartSetting::getValue('shipping_options_flat_rate_option4_1quantity');
+			} else if( $item->getQuantity() ==  2) {
+				$flat_rate += SimpleEcommCartSetting::getValue('shipping_options_flat_rate_option4_2quantity');
+
+			} else if( $item->getQuantity() >= 3 && $item->getQuantity() <= 5  ) {
+				$flat_rate += SimpleEcommCartSetting::getValue('shipping_options_flat_rate_option4_35quantity');
+
+			} else if( $item->getQuantity() >= 6 && $item->getQuantity() <= 28  ) {
+				$flat_rate += SimpleEcommCartSetting::getValue('shipping_options_flat_rate_option4_628quantity');
+
+			} else if( $item->getQuantity() >= 29 && $item->getQuantity() <= 60  ) {
+				$flat_rate += SimpleEcommCartSetting::getValue('shipping_options_flat_rate_option4_2960quantity');
+
+			} else if( $item->getQuantity() >= 61 && $item->getQuantity() <= 100  ) {
+				$flat_rate += SimpleEcommCartSetting::getValue('shipping_options_flat_rate_option4_61100quantity');
+			} else {
+				$flat_rate += SimpleEcommCartSetting::getValue('shipping_options_flat_rate_option4_61100quantity');
+			}
+
+
+		}
+
+
 	}
+
+
+
 	return $flat_rate;
   }
     
