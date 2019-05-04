@@ -621,7 +621,8 @@ class SimpleEcommCartCart {
 
 		if ($quantity == 1) {
 
-			if ($price_item == '0') {
+
+			if ($price_item == '0' && SimpleEcommCartSetting::getValue('shipping_options_flat_rate_option') == '4' && SimpleEcommCartSetting::getValue('shipping_options_flat_rate_option4_enable_0_cost') == 'on' ) {
 				$flat_rate += '0.01';
 			} else {
 				$flat_rate += SimpleEcommCartSetting::getValue('shipping_options_flat_rate_option4_1quantity');
