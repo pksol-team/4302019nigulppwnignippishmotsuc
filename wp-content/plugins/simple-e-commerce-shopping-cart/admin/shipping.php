@@ -17,6 +17,9 @@ if($_SERVER['REQUEST_METHOD'] == "POST") {
 	SimpleEcommCartSetting::setValue('shipping_options_flat_rate_option4_2960quantity', $flat_rate_rate["option4_2960quantity"]); 
 	SimpleEcommCartSetting::setValue('shipping_options_flat_rate_option4_61100quantity', $flat_rate_rate["option4_61100quantity"]); 
 
+	SimpleEcommCartSetting::setValue('shipping_options_flat_rate_option4_enable_0_cost', $flat_rate_rate["option4_enable_0_cost"]); 
+
+
   } 
 } 
 ?> 
@@ -93,6 +96,20 @@ if($_SERVER['REQUEST_METHOD'] == "POST") {
 7. quantity 61-100: item price x quantity + custom shipping cost (e.g., $2 x 72 + $40)." src=" <?php echo INFO_ICON ?>"/>
 						<br/>
 						<table>
+
+							<tr>
+								<td>&nbsp;</td>
+							</tr>
+
+							<tr style="border-bottom: 1px solid #ddd;">
+								<td> <strong>Enable 0 cost and 0.01 Shipping: </strong></td>
+								<td><input type="checkbox" name="shipping_options_flat_rate[option4_enable_0_cost]" <?php if(SimpleEcommCartSetting::getValue("shipping_options_flat_rate_option4_enable_0_cost") == 'on') echo 'checked'; ?> ></td>
+							</tr>
+
+							<tr>
+								<td>&nbsp;</td>
+							</tr>
+
 							<tr>
 								<td>Quantity: 1</td>
 								<td><input type="text" style="width: 75px;"  name="shipping_options_flat_rate[option4_1quantity]"  value='<?php echo SimpleEcommCartSetting::getValue("shipping_options_flat_rate_option4_1quantity") ?>'/></td>

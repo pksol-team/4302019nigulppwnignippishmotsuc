@@ -1,18 +1,18 @@
 <?php
 class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
-  
+
   protected $_creditAmount;
-  
+
   public function __construct($id=null) {
     $this->_tableName = SimpleEcommCartCommon::getTableName('products');
     parent::__construct($id);
     $this->_creditAmount = 0;
   }
-  
+
   public function getOptions() {
     $opt1 = $this->_buildOptionList(1);
     $opt2 = $this->_buildOptionList(2);
-	
+
 	$opt='';
 	if(strlen($opt1)>0)
 	{
@@ -24,7 +24,7 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
 	}
     return $opt;
   }
-  
+
   public function loadByDuid($duid) {
     $itemsTable = SimpleEcommCartCommon::getTableName('order_items');
     $sql = "SELECT product_id from $itemsTable where duid = '$duid'";
@@ -32,7 +32,7 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     $this->load($id);
     return $this->id;
   }
-  
+
   public function loadByItemNumber($itemNumber) {
     $itemNumber = $this->_db->escape($itemNumber);
     $sql = "SELECT id from $this->_tableName where item_number = '$itemNumber'";
@@ -59,13 +59,13 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     $sql = "SELECT count(*) from $downloadsTable where duid='$duid'";
     return $this->_db->get_var($sql);
   }
-  
+
   /**
    * Return the quantity of inventory in stock for the product with the given id and variation description.
-   * 
+   *
    * The variation descriptins is a ~ separated string of options. The price info may be in the variation string but
    * will be stripped out before calculating the iKey.
-   * 
+   *
    * @param int $id
    * @param string $variation
    * @return int Quantity of inventory in stock
@@ -75,21 +75,21 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     if(!empty($variation)) {
       $variation = self::scrubVaritationsForIkey($variation);
     }
-    
+
     $p = new SimpleEcommCartProduct($id);
     $ikey = $p->getInventoryKey($variation);
     $count = $p->getInventoryCount($ikey);
     //SimpleEcommCartCommon::log("Check Inventory Level For Product: $ikey = $count");
     return $count;
   }
-  
+
   public static function decrementInventory($id, $variation='', $qty=1) {
     SimpleEcommCartCommon::log("Decrementing Inventory: line " . __LINE__);
     // Build varation ikey string component
     if(!empty($variation)) {
       $variation = self::scrubVaritationsForIkey($variation);
     }
-    
+
     $p = new SimpleEcommCartProduct($id);
     $ikey = $p->getInventoryKey($variation);
     $count = $p->getInventoryCount($ikey);
@@ -97,10 +97,10 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     if($newCount < 0) {
       $newCount = 0;
     }
-    
+
     $p->setInventoryLevel($ikey, $newCount);
   }
-  
+
   public static function scrubVaritationsForIkey($variation='') {
     if(!empty($variation)) {
       $variations = explode('~', $variation);
@@ -112,7 +112,7 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     }
     return $variation;
   }
-  
+
   public static function confirmInventory($id, $variation='', $desiredQty=1) {
     SimpleEcommCartCommon::log('[' . basename(__FILE__) . ' - line ' . __LINE__ . "] Confirming Inventory:\n$id | $variation | $desiredQty");
     $ok = true;
@@ -124,7 +124,7 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
       $ikey = $p->getInventoryKey($variation);
       if($p->isInventoryTracked($ikey)) {
         $qty = self::checkInventoryLevelForProduct($id, $variation);
-		
+
 		//check for out of stock threshhold
 		$out_of_stock_notification = SimpleEcommCartSetting::getValue("out_of_stock_notification");
 		if($out_of_stock_notification=='1')
@@ -132,7 +132,7 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
 			$out_of_stock_threshhold =  SimpleEcommCartSetting::getValue("out_of_stock_threshhold")+0;
 			if($qty <= $out_of_stock_threshhold) return false;
 		}
-		
+
         if($qty < $desiredQty) {
           $ok = false;
         }
@@ -143,10 +143,10 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     }
     return $ok;
   }
-  
+
   /**
    * Return an array of option names having stripped off any price variations
-   * 
+   *
    * @param int $optNumber The option group number
    * @return array
    */
@@ -159,14 +159,14 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
       if(strpos($opt, '$')) {
         $name = trim(preg_replace('/\s*([+-])[^$]*\$.*$/', '', $opt));
       }
-      
+
       if(!empty($name)) {
         $names[] = $name;
       }
     }
     return $names;
   }
-  
+
   public function getAllOptionCombinations() {
     $combos = array();
     $opt1 = $this->getOptionNames(1);
@@ -185,12 +185,12 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     }
     return $combos;
   }
-  
+
   /**
-   * Return the primary key used in the ikey table. 
+   * Return the primary key used in the ikey table.
    * This is the product name + variation name without price difference information in all lowercase with no spaces.
    * Only letters and numbers are used.
-   * 
+   *
    * @param string The variation name without the price difference
    * @return string
    */
@@ -199,16 +199,16 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     $key = str_replace(' ', '', $key);
     $key = preg_replace('/\W/', '', $key);
     return $key;*/
-	
+
 	$key=$this->id;
 	if($variationName != '')
 	{
 		$key=$key.'_'.str_replace(',', '_', $variationName);
 	}
-	
+
 	return $key;
   }
-  
+
   public function insertInventoryData() {
     $keys = array();
     $combos = $this->getAllOptionCombinations();
@@ -223,10 +223,10 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
       $key = $this->getInventoryKey();
       $keys[] = $key;
     }
-    
+
     foreach($keys as $key) {
       $inventory = SimpleEcommCartCommon::getTableName('inventory');
-      
+
       // Only insert new rows
       $sql = "SELECT ikey from $inventory where ikey = %s";
       $stmt = $this->_db->prepare($sql, $key);
@@ -236,15 +236,15 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
         $stmt = $this->_db->prepare($sql, $key, 0, $this->id, 0);
         $this->_db->query($stmt);
       }
-      
+
     }
-    
+
     // Delete obsolete inventory rows
     $keyList = implode("','", $keys);
     $sql = "DELETE from $inventory where product_id=$this->id and ikey not in ('$keyList')";
     $this->_db->query($sql);
   }
-  
+
   public function updateInventoryFromPost($ikey) {
     $inventory = SimpleEcommCartCommon::getTableName('inventory');
     $track = SimpleEcommCartCommon::postVal("track_$ikey");
@@ -252,20 +252,20 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     $sql = "UPDATE $inventory set track=%d, quantity=%d where ikey=%s";
     $sql = $this->_db->prepare($sql, $track, $qty, $ikey);
     $this->_db->query($sql);
-	
+
 	SimpleEcommCartCommon::checkAndSendStockNotification($ikey);
   }
-  
+
   public function setInventoryLevel($ikey, $qty) {
     $inventory = SimpleEcommCartCommon::getTableName('inventory');
     $sql = "UPDATE $inventory set quantity=%d where ikey=%s";
     $sql = $this->_db->prepare($sql, $qty, $ikey);
     $this->_db->query($sql);
-	
-	
+
+
 	SimpleEcommCartCommon::checkAndSendStockNotification($ikey);
   }
-  
+
   public function getInventoryCount($ikey) {
     $inventory = SimpleEcommCartCommon::getTableName('inventory');
     $sql = "SELECT quantity from $inventory where ikey=%s";
@@ -293,7 +293,7 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     }
     return $counts;
   }
-  
+
   /**
    * Return an array of all inventory keys for this product
    */
@@ -310,16 +310,16 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     else {
       $ikeyList[$p->name] = $p->getInventoryKey();
     }
-    
+
     return $ikeyList;
   }
-  
+
   /**
    * Return true if this product is available in any variation for purchase.
-   * 
+   *
    * If inventory is not tracked or if any variations of the product are in stock, true is returned.
    * Otherwise, false is returned.
-   * 
+   *
    * @return boolean
    */
   public function isAvailable() {
@@ -327,19 +327,19 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     $inventory = SimpleEcommCartCommon::getTableName('inventory');
     $sql = "SELECT count(*) from $inventory where product_id=$this->id";
     $found = $this->_db->get_var($sql);
-    if($found) { 
+    if($found) {
 		$out_of_stock_notification = SimpleEcommCartSetting::getValue("out_of_stock_notification");
 		if($out_of_stock_notification=='1')
 		{
 			 $quantities = $this->getInventoryDataForSpecificProduct($this->id) ;
 	  		 $false_count=0;
 			 foreach($quantities as $iq)
-			 {  
+			 {
 				$out_of_stock_threshhold =  SimpleEcommCartSetting::getValue("out_of_stock_threshhold")+0;
 				if($iq->quantity <= $out_of_stock_threshhold)
 				{
 					$false_count++;
-				} 
+				}
 			 }
 			 if($false_count==count($quantities))
 			 {
@@ -364,8 +364,8 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
 		          $isAvailable = true;
 		        }
 		      }
-		} 
-      
+		}
+
     }
     else {
       // Inventory table hasn't been refreshed so ignore inventory tracking for this product
@@ -373,7 +373,7 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     }
     return $isAvailable;
   }
-  
+
   public function isInventoryTracked($ikey) {
     $inventory = SimpleEcommCartCommon::getTableName('inventory');
     $sql = "SELECT track from $inventory where ikey=%s";
@@ -383,7 +383,7 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     $isTracked = ($track == 1) ? true : false;
     return $isTracked;
   }
-  
+
   public function pruneInventory(array $ikeyList) {
     $inventory = SimpleEcommCartCommon::getTableName('inventory');
     $list = "'" . implode("','", $ikeyList) . "'";
@@ -392,16 +392,16 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     //SimpleEcommCartCommon::log("Prune Inventory: $sql");
   }
   public function deleteInventoryByiKey($ikey) {
-    $inventory = SimpleEcommCartCommon::getTableName('inventory'); 
-    $sql = "DELETE FROM $inventory where ikey='$ikey'"; 
+    $inventory = SimpleEcommCartCommon::getTableName('inventory');
+    $sql = "DELETE FROM $inventory where ikey='$ikey'";
     $this->_db->query($sql);
   }
   public function deleteAllInventoryData($id) {
-   	$inventory = SimpleEcommCartCommon::getTableName('inventory'); 
-    $sql = "DELETE FROM $inventory where product_id='$id'"; 
+   	$inventory = SimpleEcommCartCommon::getTableName('inventory');
+    $sql = "DELETE FROM $inventory where product_id='$id'";
     $this->_db->query($sql);
   }
-  
+
  private function _buildOptionList($optNumber) {
 	$select = '';
 	if($optNumber==1)
@@ -409,7 +409,7 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
 		$variation1s=array_filter(explode("|",$this->variation1_variations));
 		$prices1s=array_filter(explode("|",$this->variation1_prices));
 		$signs1s=array_filter(explode("|",$this->variation1_signs));
-		
+
 		if(count($variation1s)>0)
 		{
 			$select = "\n".$this->variation1_name.":<select name=\"options_$optNumber\" id=\"options_$optNumber\">";
@@ -437,21 +437,21 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
 			$select = "\n".$this->variation2_name.":<select name=\"options_$optNumber\" id=\"options_$optNumber\">";
 			$i=0;
 			foreach($variation2s as $v) {
-				
+
 				$price = $prices2s[$i];
                                 if(  $prices2s[$i] == "" || $prices2s[$i] == 0 ){
                                   $price = 0;
                                 }
-								
+
 				if($price>0) $opt= trim($v.' '.$signs2s[$i].' '.SIMPLEECOMMCART_CURRENCY_SYMBOL.$price);
 				else $opt= trim($v);
-				
+
 				$select .= "\n\t<option value=\"" . htmlentities($opt) . "\">$opt</option>";
 				$i++;
 			}
-			$select .= "\n</select>"; 
+			$select .= "\n</select>";
 		}
-	} 
+	}
     return $select;
   }
 
@@ -462,7 +462,7 @@ class SimpleEcommCartProduct extends SimpleEcommCartModelAbstract {
     }
     return $isDigital;
   }
-  
+
   public function isShipped() {
     $isShipped = false;
     if($this->shipped > 0) {
@@ -495,12 +495,12 @@ public function isTaxed() {
     }
     return $rate;
   }
-  
+
   public function getBundleShippingPrice($methodId) {
     $methodId = (isset($methodId) && is_numeric($methodId)) ? $methodId : 0;
     $ratesTable = SimpleEcommCartCommon::getTableName('shipping_rates');
     $shippingMethods = SimpleEcommCartCommon::getTableName('shipping_methods');
-    
+
     // Look to see if there is a specific bundle rate for this product and the given shipping method
     $sql = "SELECT shipping_bundle_rate from $ratesTable where product_id = " . $this->id . " and shipping_method_id = $methodId";
     $rate = $this->_db->get_var($sql);
@@ -512,7 +512,7 @@ public function isTaxed() {
     }
     return $rate;
   }
-  
+
   public function isMembershipProduct() {
     $isMembershipProduct = false;
     if($this->isMembershipProduct == 1) {
@@ -520,7 +520,7 @@ public function isTaxed() {
     }
     return $isMembershipProduct;
   }
-  
+
   public function isSubscription() {
     $isSub = false;
     if(SIMPLEECOMMCART_PRO) {
@@ -530,7 +530,7 @@ public function isTaxed() {
     }
     return $isSub;
   }
-  
+
   public function isSpreedlySubscription() {
     $isSub = false;
     if(SIMPLEECOMMCART_PRO && (is_numeric($this->spreedlySubscriptionId) && $this->spreedlySubscriptionId > 0)) {
@@ -538,7 +538,7 @@ public function isTaxed() {
     }
     return $isSub;
   }
-  
+
   public function isPayPalSubscription() {
     $isPayPalSubscription = false;
     if(SIMPLEECOMMCART_PRO && $this->isPaypalSubscription == 1) {
@@ -546,7 +546,7 @@ public function isTaxed() {
     }
     return $isPayPalSubscription;
   }
-  
+
   public static function getProductIdByGravityFormId($id) {
     global $wpdb;
     $products = SimpleEcommCartCommon::getTableName('products');
@@ -555,7 +555,7 @@ public function isTaxed() {
     $productId = $wpdb->get_var($query);
     return $productId;
   }
-  
+
   public static function getNonSubscriptionProducts() {
     global $wpdb;
     $subscriptions = array();
@@ -568,7 +568,7 @@ public function isTaxed() {
     }
     return $subscriptions;
   }
-  
+
   public static function getSubscriptionProducts() {
     global $wpdb;
     $subscriptions = array();
@@ -581,7 +581,7 @@ public function isTaxed() {
     }
     return $subscriptions;
   }
-  
+
   public static function getSpreedlyProducts() {
     global $wpdb;
     $subscriptions = array();
@@ -594,7 +594,7 @@ public function isTaxed() {
     }
     return $subscriptions;
   }
-  
+
   public static function getMembershipProducts() {
     global $wpdb;
     $memberships = array();
@@ -607,21 +607,21 @@ public function isTaxed() {
     }
     return $memberships;
   }
-  
+
   /**
    * Return the pricing for PayPal or Spreedly subscription plan.
-   * The PayPal pricing takes precedence over the Spreedly pricing, 
-   * but they should both be the same. If the $showAll paramter is 
+   * The PayPal pricing takes precedence over the Spreedly pricing,
+   * but they should both be the same. If the $showAll paramter is
    * true then a detailed price summary of all attached subscriptions
    * is returned.
-   * 
+   *
    * @return string
    */
   public function getRecurringPriceSummary() {
     $priceSummary = "No recurring pricing";
     $paypalPriceSummary = false;
     $spreedlyPriceSummary = false;
-    
+
     if($this->isPayPalSubscription()) {
       if(class_exists('SimpleEcommCartPayPalSubscription')) {
         $subscription = new SimpleEcommCartPayPalSubscription($this->id);
@@ -637,14 +637,14 @@ public function isTaxed() {
         }
       }
     }
-    
+
     return $priceSummary;
   }
-  
+
   /**
-   * Return true if only one subscription is attached or if both attached subscriptions are 
+   * Return true if only one subscription is attached or if both attached subscriptions are
    * for the same amount.
-   * 
+   *
    * @return boolean
    */
   public function subscriptionMismatch() {
@@ -655,16 +655,16 @@ public function isTaxed() {
         $spreedly->load($this->spreedlySubscriptionId);
         $paypal = new SimpleEcommCartPayPalSubscription($this->id);
         $paypalPrice = number_format($paypal->price, 2, '.', '');
-        $paypalInterval = $paypal->billingInterval; 
+        $paypalInterval = $paypal->billingInterval;
         $paypalUnits = $paypal->billingIntervalUnit;
         $pp = $paypalPrice . '|' . $paypalInterval . '|' . $paypalUnits;
-        
+
         $spreedlyPrice = number_format($spreedly->price, 2, '.', '');
         $spreedlyInterval = $spreedly->durationQuantity;
         $spreedlyUnits = $spreedly->durationUnits;
         $sp = $spreedlyPrice . '|' . $spreedlyInterval . '|' . $spreedlyUnits;
-        
-        
+
+
         $this->chargeLaterDurationQuantity . '&nbsp;' . $this->chargeLaterDurationUnits;
         SimpleEcommCartCommon::log('[' . basename(__FILE__) . ' - line ' . __LINE__ . "] Comparing: $pp <--> $sp" );
         if($pp != $sp) {
@@ -674,7 +674,7 @@ public function isTaxed() {
     }
     return $ok;
   }
-  
+
   public function hasFreeTrial() {
     $hasFreeTrial = false;
     if($this->isSubscription()) {
@@ -684,10 +684,10 @@ public function isTaxed() {
     }
     return $hasFreeTrial;
   }
-  
+
   /**
    * Return the number of sales for the given month
-   * 
+   *
    * @param int $month An integer between 1 and 12 inclusive
    * @param int $year The four digit year
    * @return int
@@ -697,28 +697,28 @@ public function isTaxed() {
     $orderItems = SimpleEcommCartCommon::getTableName('order_items');
     $start = date('Y-m-d 00:00:00', strtotime($month . '/1/' . $year));
     $end = date('Y-m-d 00:00:00', strtotime($month . '/1/' . $year . ' +1 month'));
-    $sql = "SELECT sum(oi.quantity) as num 
-      from 
-        $orders as o, 
-        $orderItems as oi 
+    $sql = "SELECT sum(oi.quantity) as num
+      from
+        $orders as o,
+        $orderItems as oi
       where
         oi.product_id = %s and
         oi.order_id = o.id and
-        o.ordered_on >= '$start' and 
+        o.ordered_on >= '$start' and
         o.ordered_on < '$end'
       ";
     $query = $this->_db->prepare($sql, $this->id);
     $num = $this->_db->get_var($query);
     return $num;
   }
-  
+
   public function getSalesTotal() {
     $orders = SimpleEcommCartCommon::getTableName('orders');
     $orderItems = SimpleEcommCartCommon::getTableName('order_items');
-    $sql = "SELECT sum(oi.quantity) as num 
-      from 
-        $orders as o, 
-        $orderItems as oi 
+    $sql = "SELECT sum(oi.quantity) as num
+      from
+        $orders as o,
+        $orderItems as oi
       where
         oi.product_id = %s and
         oi.order_id = o.id
@@ -727,14 +727,14 @@ public function isTaxed() {
     $num = $this->_db->get_var($query);
     return $num;
   }
-  
+
   public function getIncomeTotal() {
     $orders = SimpleEcommCartCommon::getTableName('orders');
     $orderItems = SimpleEcommCartCommon::getTableName('order_items');
-    $sql = "SELECT sum(oi.product_price * oi.quantity) as num 
-      from 
-        $orders as o, 
-        $orderItems as oi 
+    $sql = "SELECT sum(oi.product_price * oi.quantity) as num
+      from
+        $orders as o,
+        $orderItems as oi
       where
         oi.product_id = %s and
         oi.order_id = o.id
@@ -743,13 +743,13 @@ public function isTaxed() {
     $num = $this->_db->get_var($query);
     return $num;
   }
-  
+
   public function getIncomeForMonth($month, $year) {
     $orders = SimpleEcommCartCommon::getTableName('orders');
     $orderItems = SimpleEcommCartCommon::getTableName('order_items');
     $start = date('Y-m-d 00:00:00', strtotime($month . '/1/' . $year));
     $end = date('Y-m-d 00:00:00', strtotime($month . '/1/' . $year . ' +1 month'));
-    
+
     $sql = "SELECT sum(oi.product_price * oi.quantity) as total
       FROM
         $orders as o,
@@ -757,37 +757,49 @@ public function isTaxed() {
       WHERE
         oi.product_id = %s and
         oi.order_id = o.id and
-        o.ordered_on >= '$start' and 
+        o.ordered_on >= '$start' and
         o.ordered_on < '$end'
       ";
-       
+
     $query = $this->_db->prepare($sql, $this->id);
     $total = $this->_db->get_var($query);
     return $total;
   }
-  
+
   public function validate() {
-    $errors = array();
-    
-	 // Verify that the Product name is present
+
+	$errors = array();
+
+	// Verify that the Product name is present
     if(empty($this->name)) {
-      $errors['name'] = "Product name is required";
+    	$errors['name'] = "Product name is required";
     }
-	
-	 // Verify that the Product price is present
-    if(empty($this->price)) {
-      $errors['price'] = "Product price is required";
-    }
-	
+
+	$price_validate = true;
+
+	if(SimpleEcommCartSetting::getValue('shipping_options_flat_rate_option') == '4' && SimpleEcommCartSetting::getValue('shipping_options_flat_rate_option4_enable_0_cost') == 'on') {
+
+		$price_validate = false;
+
+	}
+
+	if($price_validate == true) {
+
+		if(empty($this->price)) {
+			$errors['price'] = "Product price is required";
+		}
+
+	}
+
     // Verify that the item number is present
     //if(empty($this->item_number)) {
       //$errors['item_number'] = "Item number is required";
     //}
-    
+
     if(empty($this->spreedlySubscriptionId))  {
       $this->spreedlySubscriptionId = 0;
     }
-    
+
     // Verify that no other products have the same item number
     if(empty($errors)) {
       $sql = "SELECT count(*) from $this->_tableName where item_number = %s and id != %d";
@@ -797,7 +809,7 @@ public function isTaxed() {
         $errors['item_number'] = "The item number must be unique";
       }
     }
-    
+
     // Verify that if the product has been saved and there is a download path that there is a file located at the path
     if(!empty($this->download_path)) {
       $dir = SimpleEcommCartSetting::getValue('product_folder');
@@ -808,11 +820,11 @@ public function isTaxed() {
 
     return $errors;
   }
-  
+
   /**
    * Check the gravity form entry for the quantity field.
    * Return the quanity in the field, or 1 if no quantity can be found.
-   * 
+   *
    * @return int
    * @access public
    */
@@ -827,7 +839,7 @@ public function isTaxed() {
     }
     return $qty;
   }
-  
+
   public function gravityGetVariationPrices($gfEntry) {
     $options = array();
     SimpleEcommCartCommon::log('[' . basename(__FILE__) . ' - line ' . __LINE__ . "] Gravity Forms Entry:  " . print_r($gfEntry, true));
@@ -842,7 +854,7 @@ public function isTaxed() {
     $options = implode('~', $options);
     return $options;
   }
-  
+
   public function isGravityProduct() {
     $isGravity = false;
     if($this->gravity_form_id > 0) {
@@ -850,7 +862,7 @@ public function isTaxed() {
     }
     return $isGravity;
   }
-  
+
   public function handleFileUpload() {
     // Check for file upload
     if(strlen($_FILES['product']['tmp_name']['upload']) > 2) {
@@ -869,8 +881,8 @@ public function isTaxed() {
         }
       }
     }
-	
-	//check for product image upload 
+
+	//check for product image upload
 	if(strlen($_FILES['product']['tmp_name']['image_upload']) > 2) {
       $dir = SimpleEcommCartSetting::getValue('product_folder');
       if($dir) {
@@ -888,7 +900,7 @@ public function isTaxed() {
       }
     }
 	//product_image_path
-	
+
 	//check for custom button image upload
 	if(strlen($_FILES['product']['tmp_name']['button_image_upload']) > 2) {
       $dir = SimpleEcommCartSetting::getValue('product_folder');
@@ -907,10 +919,10 @@ public function isTaxed() {
       }
     }
   }
-  
+
   /**
    * Return the price to charge at checkout.
-   * For subscriptions this may also include the first recurring payment if the recurring start number is 0. 
+   * For subscriptions this may also include the first recurring payment if the recurring start number is 0.
    * This function will return the exact product price if:
    *  - The product is not a subscription product
    *  - The product is a subscription with a free trial period
@@ -938,10 +950,10 @@ public function isTaxed() {
     }
     return $price;
   }
-  
+
   /**
    * Return a description of the subscription rate such as $10 / 1 month
-   * 
+   *
    * @return string
    */
   public function getSubscriptionPriceSummary() {
@@ -953,7 +965,7 @@ public function isTaxed() {
     }
     return $desc;
   }
-  
+
   public function getPriceDescription($priceDifference=0) {
     if($this->id > 0) {
       if($this->isSpreedlySubscription()) {
@@ -970,13 +982,13 @@ public function isTaxed() {
           if($price > 0) { $priceDescription .= ' (one time) +<br/> '; }
           $priceDescription .= $this->getSubscriptionPriceSummary();
         }
-        
+
         $proRated = $this->getProRateInfo();
         if(is_object($proRated) && $proRated->amount > 0) {
           $proRatedInfo = $proRated->description . ':&nbsp;' . $proRated->money;
           $priceDescription .= '<br/>' . $proRatedInfo;
         }
-        
+
       }
       elseif($this->isPayPalSubscription()) {
         $plan = new SimpleEcommCartPayPalSubscription($this->id);
@@ -1001,15 +1013,15 @@ public function isTaxed() {
     }
     return $priceDescription;
   }
-  
+
   /**
    * Return information about pro-rated credit or false if there is none.
-   * 
+   *
    * Returns a standard object:
    *   $data->description = The description of the credit
    *   $data->amount = The monetary amount of the credit
    *   $data->money = The formated monetary amount of the credit
-   * 
+   *
    * return object or false
    */
   public function getProRateInfo() {
@@ -1042,14 +1054,14 @@ public function isTaxed() {
         }
       }
     }
-    
+
     return $data;
   }
-  
+
   /**
    * Return the SimpleEcommCartPayPalSubscription associated with this products paypal subscription id.
    * If no paypal subscription is attached to this product, return false.
-   * 
+   *
    * @return SimpleEcommCartPayPalSubscription
    */
   public function getPayPalSubscription() {
@@ -1061,12 +1073,12 @@ public function isTaxed() {
     }
     return $sub;
   }
-  
+
   /**
    * Override base class save method by validating the data before and after saving.
    * Return the product id of the saved product.
    * Throw SimpleEcommCartException if the save fails.
-   * 
+   *
    * @return int The product id
    * @throws SimpleEcommCartException on save failure
    */
@@ -1084,23 +1096,23 @@ public function isTaxed() {
     }
     return $productId;
   }
-  
-  
-  
-  
+
+
+
+
   // written by Dipankar Biswas
   public function saveInventoryData($quantities)
   {
   	  //delete all inventory items first
   	  $sql = "DELETE from ".SimpleEcommCartCommon::getTableName('inventory')." ";
-      $this->_db->query($sql); 
-	  
+      $this->_db->query($sql);
+
 	  foreach($quantities as $key => $value)
 	  {
 	  	  $items=array_filter(explode("_",$key));
 		  $product_id=$items[0];
 	  	  $sql = "INSERT INTO ".SimpleEcommCartCommon::getTableName('inventory')." (ikey,product_id,quantity,track) values('$key',$product_id,$value,'1')";
-      $this->_db->query($sql); 
+      $this->_db->query($sql);
 	  }
   }
   public function updateBulkPrice($data,$checks)
@@ -1139,7 +1151,7 @@ public function isTaxed() {
 				$p->save();
 				$p->clear();
 			}
-			
+
 		}
 	  }
 	  else
@@ -1180,22 +1192,22 @@ public function isTaxed() {
 						$p->save();
 						$p->clear();
 					}
-					
+
 			}
 	  	}
 	  }
   }
-  
-  
+
+
   public function getInventoryData()
   {
   	$sql="SELECT ikey,quantity from ".SimpleEcommCartCommon::getTableName('inventory')." ";
     $sql = $this->_db->prepare($sql,null);
 	$data = $this->_db->get_results($sql,OBJECT_K);
-	 
-	
+
+
 	$quantities=array();
-	
+
 	foreach($data as $item)
 	{
 		 $key= $item->ikey;
@@ -1209,7 +1221,7 @@ public function isTaxed() {
   	$sql="SELECT ikey,quantity from ".SimpleEcommCartCommon::getTableName('inventory')." where product_id=".$id."";
     $sql = $this->_db->prepare($sql,null);
 	$data = $this->_db->get_results($sql,OBJECT_K);
-	 
+
 	return $data;
   }
   /**
@@ -1230,9 +1242,9 @@ public function isTaxed() {
     $num = $this->_db->get_var($query);
     return $num;
   }
-  
+
   public function getMaximumProductId()
-  { 
+  {
     $sql = "SELECT MAX( id ) FROM ".SimpleEcommCartCommon::getTableName('products');
     $query = $this->_db->prepare($sql, $this->id);
     $num = $this->_db->get_var($query);
